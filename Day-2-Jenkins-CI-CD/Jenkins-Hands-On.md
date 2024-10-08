@@ -1162,6 +1162,236 @@ For these scenarios, we’ll be using an **AWS EC2 instance** as our Jenkins ser
    - Use Jenkins Blue Ocean to visualize the parallel and sequential stages.
 
 ---
+Let's build a complete end-to-end project using Jenkins, integrating various tools like Git, Docker, Kubernetes, and AWS. This will cover an entire CI/CD pipeline from code commit to deployment, ensuring zero downtime with advanced deployment strategies.
+
+### **Project Overview:**
+
+We’ll build a **Node.js Application**, use **Jenkins** to create a CI/CD pipeline, integrate with **Docker** for containerization, use **Kubernetes** for orchestration, and deploy the final application to an **AWS EKS Cluster**.
+
+### **Step-by-Step Guide:**
+
+#### **1. Create a Sample Node.js Application**
+
+1. **Create a GitHub Repository**:
+
+   - Name the repository `complete-ci-cd-pipeline`.
+   - Initialize it with a README and a `.gitignore` file for Node.js.
+
+2. **Create the Application Code**:
+
+   - Clone the repository locally:
+     ```bash
+     git clone https://github.com/yourusername/complete-ci-cd-pipeline.git
+     ```
+   
+   - Navigate to the cloned repository:
+     ```bash
+     cd complete-ci-cd-pipeline
+     ```
+
+   - Create a new file named `app.js`:
+     ```javascript
+     const http = require('http');
+     const port = process.env.PORT || 3000;
+     const server = http.createServer((req, res) => {
+       res.statusCode = 200;
+       res.setHeader('Content-Type', 'text/plain');
+       res.end('Hello, World! This is a CI/CD Pipeline project using Jenkins, Docker, and Kubernetes.');
+     });
+     server.listen(port, () => {
+       console.log(`Server running at port ${port}`);
+     });
+     ```
+
+   - Create a `package.json` file:
+     ```json
+     {
+       "name": "complete-ci-cd-pipeline",
+       "version": "1.0.0",
+       "description": "Node.js project for CI/CD Pipeline",
+       "main": "app.js",
+       "scripts": {
+         "start": "node app.js"
+       },
+       "author": "Your Name",
+       "license": "ISC",
+       "dependencies": {
+         "express": "^4.17.1"
+       }
+     }
+     ```
+
+   - Add and commit the changes:
+     ```bash
+     git add .
+     git commit -m "Initial commit with Node.js application"
+     git push origin main
+     ```
+
+#### **2. Create a Dockerfile for Containerization**
+
+1. **Create a new file named `Dockerfile` in the project root**:
+   
+   ```Dockerfile
+   # Use the official Node.js base image
+   FROM node:14
+
+   # Set the working directory inside the container
+   WORKDIR /app
+
+   # Copy the package.json and install dependencies
+   COPY package.json .
+   RUN npm install
+
+   # Copy the rest of the application code
+   COPY . .
+
+   # Expose the application port
+   EXPOSE 3000
+
+   # Start the application
+   CMD ["npm", "start"]
+   ```
+
+2. **Test the Docker Build Locally**:
+
+   - Run the following commands to build and test the Docker image locally:
+     ```bash
+     docker build -t complete-ci-cd-pipeline .
+     docker run -p 3000:3000 complete-ci-cd-pipeline
+     ```
+
+   - Open your browser and go to `http://localhost:3000`. You should see the message:
+     ```
+     Hello, World! This is a CI/CD Pipeline project using Jenkins, Docker, and Kubernetes.
+     ```
+
+#### **3. Create a Jenkins Pipeline for CI/CD**
+
+1. **Create a `Jenkinsfile`** in the project root with the following content:
+
+   ```groovy
+   pipeline {
+       agent any
+
+       environment {
+           DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+           ECR_REPO_NAME = 'complete-ci-cd-pipeline'
+           AWS_ACCOUNT_ID = 'your-aws-account-id'
+           REGION = 'us-east-1'
+           IMAGE_TAG = 'latest'
+       }
+
+       stages {
+           stage('Checkout') {
+               steps {
+                   git 'https://github.com/yourusername/complete-ci-cd-pipeline.git'
+               }
+           }
+
+           stage('Build Docker Image') {
+               steps {
+                   script {
+                       docker.build("${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}")
+                   }
+               }
+           }
+
+           stage('Push Docker Image') {
+               steps {
+                   script {
+                       docker.withRegistry("https://${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com") {
+                           docker.image("${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}").push()
+                       }
+                   }
+               }
+           }
+
+           stage('Deploy to Kubernetes') {
+               steps {
+                   kubernetesDeploy(configs: 'k8s/deployment.yaml', kubeConfig: '<kubeconfig-path>')
+               }
+           }
+       }
+
+       post {
+           success {
+               echo 'CI/CD Pipeline executed successfully!'
+           }
+           failure {
+               echo 'Pipeline failed. Please check the logs.'
+           }
+       }
+   }
+   ```
+
+2. **Create a `deployment.yaml` File for Kubernetes Deployment**:
+
+   - Create a folder named `k8s` and add a `deployment.yaml` file with the following content:
+     ```yaml
+     apiVersion: apps/v1
+     kind: Deployment
+     metadata:
+       name: ci-cd-deployment
+     spec:
+       replicas: 3
+       selector:
+         matchLabels:
+           app: ci-cd-app
+       template:
+         metadata:
+           labels:
+             app: ci-cd-app
+         spec:
+           containers:
+           - name: ci-cd-app
+             image: ${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${ECR_REPO_NAME}:${IMAGE_TAG}
+             ports:
+             - containerPort: 3000
+     ```
+
+3. **Set Up Jenkins**:
+
+   - Create a **Pipeline Job** in Jenkins and link it to the `Jenkinsfile` in the GitHub repository.
+   - Make sure you have the Docker and Kubernetes plugins installed in Jenkins.
+
+4. **Run the Jenkins Pipeline**:
+
+   - Run the pipeline and watch the stages execute: **Checkout, Build Docker Image, Push Docker Image, and Deploy to Kubernetes**.
+   - Jenkins will build the Docker image, push it to AWS ECR, and deploy the application to your Kubernetes cluster.
+
+5. **Verify the Deployment**:
+
+   - Use the following commands to verify that the application is running in your Kubernetes cluster:
+     ```bash
+     kubectl get deployments
+     kubectl get pods
+     ```
+
+   - Access the application using the service IP or Ingress.
+
+#### **4. Implement Blue-Green Deployment with Jenkins**
+
+1. **Extend the Kubernetes Deployment YAML File**:
+
+   - Add configurations for `blue` and `green` deployments using Kubernetes services.
+
+2. **Modify the Jenkinsfile to Handle Blue-Green Strategy**:
+
+   - Use environment variables to determine which environment is active and switch between `blue` and `green` deployments.
+
+3. **Add Steps in Jenkinsfile for Traffic Switching**:
+
+   - Use Jenkins to automate traffic switching between the environments, ensuring zero-downtime deployments.
+
+#### **5. Conclusion: Jenkins End-to-End Project**
+
+Congratulations! 🎉 You’ve built an end-to-end CI/CD pipeline using Jenkins that involves building a Docker image, pushing it to AWS ECR, and deploying it to a Kubernetes cluster using Jenkins pipelines. 
+
+This project covers essential DevOps practices and showcases how Jenkins integrates with Docker, Kubernetes, and AWS to create a complete CI/CD workflow.
+
+For more insights and updates, connect with me on [LinkedIn](https://www.linkedin.com/in/vellankikoti/).
+
 
 ### **Day 2 Conclusion**
 
@@ -1173,7 +1403,5 @@ Congratulations on completing Day 2 of our **15-Day DevOps Interview Preparation
 3. **Advanced Use Cases**: AWS integrations, Kubernetes HA, Groovy scripting, and parallel pipelines.
 
 In Day 3, we’ll dive into **Ansible** — exploring scenarios for configuration management, orchestration, and automating cloud environments!
-
-For more DevOps updates, connect with me on [LinkedIn](https://www.linkedin.com/in/vellankikoti/).
 
 
