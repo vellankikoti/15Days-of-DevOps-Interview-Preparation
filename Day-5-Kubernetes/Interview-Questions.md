@@ -575,4 +575,665 @@ kubectl scale deployment <deployment-name> --replicas=5
 ```bash
 kubeadm upgrade apply <new-version>
 ```
+
+---
+
+**101. How do you perform a rolling update in Kubernetes?**
+- **Answer**: A rolling update in Kubernetes can be done by updating the container image in a Deployment. Kubernetes gradually replaces the old pods with the new version while ensuring that the desired number of replicas is always available.
+
+```bash
+kubectl set image deployment/<deployment-name> <container-name>=<new-image>
+```
+
+---
+
+**102. What are taints and tolerations in Kubernetes?**
+- **Answer**: Taints are applied to nodes to prevent pods from being scheduled unless they tolerate the taint. Tolerations are applied to pods to allow them to be scheduled on tainted nodes.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  tolerations:
+  - key: "key1"
+    operator: "Equal"
+    value: "value1"
+    effect: "NoSchedule"
+```
+
+---
+
+**103. How do you check the resource usage of a pod in Kubernetes?**
+- **Answer**: You can check the resource usage of a pod by using the `kubectl top` command, which displays CPU and memory usage.
+
+```bash
+kubectl top pod <pod-name>
+```
+
+---
+
+**104. What is the use of a Kubernetes ConfigMap?**
+- **Answer**: A ConfigMap is used to store non-sensitive configuration data that can be injected into pods as environment variables, command-line arguments, or configuration files.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+data:
+  configKey: value
+```
+
+---
+
+**105. What are the key differences between Kubernetes Pods and Containers?**
+- **Answer**: A Pod is a Kubernetes abstraction that encapsulates one or more containers, networking, and storage resources, and it is the smallest deployable unit in Kubernetes. A container is a runtime environment for applications.
+
+---
+
+**106. How do you perform debugging of a failed pod in Kubernetes?**
+- **Answer**: You can debug a failed pod by using `kubectl describe pod <pod-name>` to check for events or logs. Additionally, `kubectl logs <pod-name>` will help you view the logs of a specific container in the pod.
+
+---
+
+**107. What is a Kubernetes Service and how do you expose it?**
+- **Answer**: A Kubernetes Service is an abstraction that defines a logical set of pods and a policy to access them. It can be exposed using types such as ClusterIP, NodePort, LoadBalancer, or ExternalName.
+
+---
+
+**108. What is the purpose of a Kubernetes Deployment?**
+- **Answer**: A Deployment in Kubernetes manages the lifecycle of stateless applications. It ensures that the specified number of replicas of a pod are running at all times, and it provides easy updates and rollbacks.
+
+---
+
+**109. How do you configure Horizontal Pod Autoscaling (HPA) in Kubernetes?**
+- **Answer**: HPA automatically scales the number of pod replicas based on CPU usage or custom metrics. You can configure it using `kubectl autoscale` or by creating an HPA resource in a YAML file.
+
+```bash
+kubectl autoscale deployment <deployment-name> --cpu-percent=50 --min=1 --max=10
+```
+
+---
+
+**110. What is a StatefulSet and when would you use it?**
+- **Answer**: A StatefulSet is used for stateful applications in Kubernetes. It ensures that pods have unique, persistent identities and stable storage, which is important for applications like databases that require stable network identities.
+
+---
+
+**111. What is a PodDisruptionBudget in Kubernetes?**
+- **Answer**: A PodDisruptionBudget (PDB) ensures that a minimum number of pods in a deployment or replica set are available during voluntary disruptions, such as node upgrades or rolling updates.
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: my-app
+```
+
+---
+
+**112. How does Kubernetes handle secret management?**
+- **Answer**: Kubernetes manages secrets using the `Secret` resource, which stores sensitive data such as passwords and tokens in an encrypted format. These secrets can be injected into pods as environment variables or volumes.
+
+---
+
+**113. What is a Kubernetes CronJob and how do you use it?**
+- **Answer**: A CronJob runs jobs at scheduled times, similar to cron jobs in Linux. It's useful for tasks like backups, cleanup jobs, or batch processing.
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: my-cronjob
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: my-container
+            image: my-image
+```
+
+---
+
+**114. How do you manage Kubernetes version upgrades?**
+- **Answer**: Kubernetes version upgrades can be performed using `kubeadm` or by leveraging managed Kubernetes services like EKS, GKE, or AKS. Upgrade control plane components and then worker nodes while ensuring compatibility.
+
+---
+
+**115. How do you configure persistent storage for stateful applications in Kubernetes?**
+- **Answer**: Persistent storage is managed using Persistent Volumes (PV) and Persistent Volume Claims (PVC). PVCs request storage resources, and PVs provide them.
+
+---
+
+**116. How do you implement network policies in Kubernetes?**
+- **Answer**: Network policies define how pods communicate with each other. You can use them to restrict traffic to and from pods based on labels, namespaces, or IP ranges.
+
+---
+
+**117. How do you manage deployments with multiple containers in Kubernetes?**
+- **Answer**: You can use multi-container pods where each container runs in the same pod, sharing the same network namespace. Use different containers to handle different parts of the application, such as logging or monitoring.
+
+---
+
+**118. How do you monitor Kubernetes cluster health and resource usage?**
+- **Answer**: Kubernetes cluster health and resource usage can be monitored using Prometheus, Grafana, and custom metrics. Tools like `kubectl top nodes/pods` can also be used for quick insights.
+
+---
+
+**119. How do you handle rolling back a failed deployment in Kubernetes?**
+- **Answer**: You can roll back a deployment using `kubectl rollout undo`. It will revert the deployment to its previous version.
+
+```bash
+kubectl rollout undo deployment/<deployment-name>
+```
+
+---
+
+**120. How do you update a Kubernetes deployment to use a new image?**
+- **Answer**: Update the deployment by using `kubectl set image` to point to the new image. Kubernetes will automatically perform a rolling update for you.
+
+```bash
+kubectl set image deployment/<deployment-name> <container-name>=<new-image>
+```
+
+---
+
+**121. What are Init Containers in Kubernetes, and how are they used?**  
+- **Answer**: Init containers are special containers that run before the main application containers in a pod. They are used to perform initialization tasks, such as waiting for a service to be ready or fetching configuration files. Init containers ensure that the main application container runs in a properly configured environment.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-container-example
+spec:
+  initContainers:
+  - name: init-container
+    image: busybox
+    command: ['sh', '-c', 'echo Initializing && sleep 5']
+  containers:
+  - name: main-container
+    image: nginx
+```
+
+---
+
+**122. What is the difference between NodePort, ClusterIP, and LoadBalancer services?**  
+- **Answer**:  
+  - **NodePort**: Exposes the service on a specific port of each node in the cluster, making it accessible externally.  
+  - **ClusterIP**: The default service type, accessible only within the cluster using the cluster's internal IP.  
+  - **LoadBalancer**: Creates an external load balancer and routes traffic to the service pods.  
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  type: NodePort  # or ClusterIP or LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30007
+```
+
+---
+
+**123. How do you configure Horizontal Pod Autoscaling (HPA) with custom metrics?**  
+- **Answer**: To use custom metrics, you need to set up a custom metrics server like Prometheus Adapter and configure HPA to use the metrics.
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: custom-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+    pods:
+      metric:
+        name: custom_metric
+      target:
+        type: AverageValue
+        averageValue: 500m
+```
+
+---
+
+**124. What is the difference between ReplicaSet and Deployment?**  
+- **Answer**:  
+  - **ReplicaSet**: Ensures a specified number of pod replicas are running at all times. It is a lower-level resource.
+  - **Deployment**: Provides declarative updates for pods and ReplicaSets, supporting rolling updates and rollbacks. It is the recommended way to manage stateless applications.
+
+---
+
+**125. How do you troubleshoot a CrashLoopBackOff error in a pod?**  
+- **Answer**:  
+  1. Check the pod's events:
+     ```bash
+     kubectl describe pod <pod-name>
+     ```
+  2. View the pod logs:
+     ```bash
+     kubectl logs <pod-name>
+     ```
+  3. Check resource limits, liveness/readiness probes, and container entrypoints for issues.
+
+---
+
+**126. What are Kubernetes DaemonSets used for?**  
+- **Answer**: DaemonSets ensure that a copy of a pod runs on all (or some) nodes in the cluster. They are typically used for logging, monitoring, or networking services like Fluentd, Prometheus Node Exporter, or Calico.
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: my-daemonset
+spec:
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: my-container
+        image: my-image
+```
+
+---
+
+**127. What is Istio, and how is it used with Kubernetes?**  
+- **Answer**: Istio is a service mesh that provides traffic management, security, and observability for microservices. It runs alongside your Kubernetes cluster and manages service-to-service communication.
+
+---
+
+**128. How do you configure Kubernetes Ingress for HTTPS?**  
+- **Answer**: To enable HTTPS, you need to create a TLS certificate and associate it with your ingress resource.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: https-ingress
+spec:
+  tls:
+  - hosts:
+    - my-app.example.com
+    secretName: tls-secret
+  rules:
+  - host: my-app.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-service
+            port:
+              number: 80
+```
+
+---
+
+**129. How do you drain a Kubernetes node for maintenance?**  
+- **Answer**: Use the `kubectl drain` command to safely evict all pods from the node.
+
+```bash
+kubectl drain <node-name> --ignore-daemonsets
+```
+
+---
+
+**130. What is the purpose of Kubernetes Labels and Selectors?**  
+- **Answer**: Labels are key-value pairs attached to Kubernetes objects to organize and select subsets of objects. Selectors enable you to filter objects based on labels.
+
+---
+
+**131. How do you upgrade a Kubernetes cluster using kubeadm?**  
+- **Answer**:  
+  1. Upgrade the kubeadm tool on the control plane node.
+     ```bash
+     apt-get update && apt-get install -y kubeadm
+     kubeadm upgrade plan
+     kubeadm upgrade apply <version>
+     ```
+  2. Upgrade kubelet and kubectl on all nodes.
+     ```bash
+     apt-get install -y kubelet kubectl
+     systemctl restart kubelet
+     ```
+
+---
+
+**132. How do you manage secrets securely in Kubernetes?**  
+- **Answer**: Kubernetes stores secrets in base64-encoded format. To improve security, enable encryption at rest in the `kube-apiserver` configuration.
+
+```bash
+kubectl create secret generic my-secret --from-literal=password=Pa$$w0rd
+```
+
+---
+
+**133. What is a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC)?**  
+- **Answer**:  
+  - PV: Represents physical storage in the cluster.  
+  - PVC: Requests storage resources from a PV.  
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+---
+
+**134. How do you configure Node Affinity in Kubernetes?**  
+- **Answer**: Node affinity schedules pods on specific nodes based on labels.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: affinity-pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node-type
+            operator: In
+            values:
+            - gpu
+```
+
+---
+
+**135. What are Kubernetes Readiness and Liveness Probes?**  
+- **Answer**:  
+  - **Readiness Probe**: Determines if the pod is ready to accept traffic.  
+  - **Liveness Probe**: Checks if the pod is alive; restarts it if not.
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+livenessProbe:
+  tcpSocket:
+    port: 8080
+```
+
+---
+Continuing with **Kubernetes Questions** from 136 onward:  
+
+---
+
+**136. What is a Kubernetes Job, and how is it different from a Deployment?**  
+- **Answer**: A Job is used to create one or more pods that run to completion, typically for batch or scheduled tasks. Unlike Deployments, Jobs do not run indefinitely and are not meant for services that require high availability.  
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: example
+        image: busybox
+        command: ["echo", "Hello Kubernetes!"]
+      restartPolicy: Never
+  backoffLimit: 4
+```
+
+---
+
+**137. How do you monitor resource usage of Kubernetes pods?**  
+- **Answer**: Use `kubectl top` to monitor pod resource usage.  
+```bash
+kubectl top pods --namespace=<namespace>
+```
+Alternatively, use tools like **Prometheus** and **Grafana** for advanced monitoring.
+
+---
+
+**138. What are Resource Requests and Limits in Kubernetes, and why are they important?**  
+- **Answer**: Resource requests specify the minimum resources a container needs, while limits specify the maximum it can use. These help in optimizing cluster resource allocation and avoiding resource contention.  
+
+```yaml
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "250m"
+  limits:
+    memory: "128Mi"
+    cpu: "500m"
+```
+
+---
+
+**139. How do you configure a Kubernetes Horizontal Pod Autoscaler (HPA)?**  
+- **Answer**: HPA scales the number of pods based on CPU/memory usage or custom metrics.  
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-example
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-deployment
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+```
+
+---
+
+**140. What are StatefulSets, and when should you use them?**  
+- **Answer**: StatefulSets are used for managing stateful applications like databases. They maintain a stable network identity and storage across pod restarts.  
+
+Use cases include databases like MySQL, PostgreSQL, or distributed systems like Cassandra.  
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: example-statefulset
+spec:
+  serviceName: "nginx"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+```
+
+---
+
+**141. What is the purpose of Kubernetes Taints and Tolerations?**  
+- **Answer**: Taints prevent pods from being scheduled on specific nodes unless the pod has a matching toleration. This is useful for isolating workloads.  
+
+```yaml
+# Adding a taint to a node
+kubectl taint nodes node1 key=value:NoSchedule
+
+# Adding a toleration to a pod
+tolerations:
+- key: "key"
+  operator: "Equal"
+  value: "value"
+  effect: "NoSchedule"
+```
+
+---
+
+**142. What is Pod Disruption Budget (PDB), and how is it configured?**  
+- **Answer**: PDB ensures a minimum number of pods remain available during voluntary disruptions like node upgrades.  
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pdb-example
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: my-app
+```
+
+---
+
+**143. How do you debug a pod stuck in the Pending state?**  
+- **Answer**:  
+  1. Check pod events:
+     ```bash
+     kubectl describe pod <pod-name>
+     ```
+  2. Verify resource availability:
+     ```bash
+     kubectl get nodes --output wide
+     ```
+  3. Inspect scheduling issues (node selectors, tolerations, etc.).
+
+---
+
+**144. What is the difference between Ingress and Egress in Kubernetes?**  
+- **Answer**:  
+  - **Ingress**: Controls incoming traffic to the cluster, routing it to services.  
+  - **Egress**: Controls outgoing traffic from the cluster to external systems.
+
+---
+
+**145. What are Kubernetes ConfigMaps, and how do you use them?**  
+- **Answer**: ConfigMaps store non-sensitive configuration data that can be injected into pods as environment variables or mounted as files.  
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  config.json: |
+    {
+      "name": "app-name",
+      "version": "1.0"
+    }
+```
+
+---
+
+**146. How do you configure a Network Policy in Kubernetes?**  
+- **Answer**: Network policies control the ingress and egress traffic for pods based on labels.  
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app
+spec:
+  podSelector:
+    matchLabels:
+      app: my-app
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          role: frontend
+```
+
+---
+
+**147. What are CRDs (Custom Resource Definitions) in Kubernetes?**  
+- **Answer**: CRDs extend Kubernetes by allowing users to define custom resources. These are useful for domain-specific objects like ArgoCD applications.
+
+```yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: myresources.mygroup.example.com
+spec:
+  group: mygroup.example.com
+  names:
+    plural: myresources
+    singular: myresource
+    kind: MyResource
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+```
+
+---
+
+**148. How do you troubleshoot high CPU usage in a pod?**  
+- **Answer**:  
+  1. Check metrics using `kubectl top pods`.  
+  2. Analyze logs:  
+     ```bash
+     kubectl logs <pod-name>
+     ```
+  3. Monitor using Prometheus and Grafana dashboards.  
+  4. Check resource requests and limits in pod configuration.
+
+---
+
+**149. How do you roll back a Deployment in Kubernetes?**  
+- **Answer**: Use the `kubectl rollout` command.  
+```bash
+kubectl rollout undo deployment <deployment-name>
+```
+
+---
+
+**150. What is the difference between Rolling Updates and Blue-Green Deployments in Kubernetes?**  
+- **Answer**:  
+  - **Rolling Updates**: Gradually replace old pods with new ones to ensure zero downtime.  
+  - **Blue-Green Deployments**: Maintain two environments (blue and green), switching traffic to the green (new) environment once it's ready.  
+
 ---
