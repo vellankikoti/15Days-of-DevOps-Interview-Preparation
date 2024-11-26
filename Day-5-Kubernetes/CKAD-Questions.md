@@ -745,3 +745,288 @@ roleRef:
 ```
 
 ---
+**31. Task:**  
+Configure a `ConfigMap` to store application configuration data and inject it into a Pod.
+
+**Answer:**  
+Create the ConfigMap:  
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_ENV: "production"
+  APP_DEBUG: "false"
+```
+
+Use the ConfigMap in a Pod:  
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-pod
+spec:
+  containers:
+  - name: app-container
+    image: nginx
+    env:
+    - name: APP_ENV
+      valueFrom:
+        configMapKeyRef:
+          name: app-config
+          key: APP_ENV
+    - name: APP_DEBUG
+      valueFrom:
+        configMapKeyRef:
+          name: app-config
+          key: APP_DEBUG
+```
+
+---
+
+**32. Task:**  
+Secure sensitive application data using a Secret and inject it into a Pod.
+
+**Answer:**  
+Create the Secret:  
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+type: Opaque
+data:
+  username: bXl1c2VybmFtZQ== # Base64 encoded "myusername"
+  password: bXlwYXNzd29yZA== # Base64 encoded "mypassword"
+```
+
+Use the Secret in a Pod:  
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: db-pod
+spec:
+  containers:
+  - name: db-container
+    image: mysql
+    env:
+    - name: DB_USER
+      valueFrom:
+        secretKeyRef:
+          name: db-credentials
+          key: username
+    - name: DB_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: db-credentials
+          key: password
+```
+
+---
+
+### **Multi-Container Pods**
+
+**33. Task:**  
+Create a multi-container Pod where one container serves as the main application and the other as a logging sidecar.
+
+**Answer:**  
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container-pod
+spec:
+  containers:
+  - name: app-container
+    image: nginx
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/app
+  - name: logging-container
+    image: busybox
+    command: ["/bin/sh", "-c", "tail -f /var/log/app/access.log"]
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/app
+  volumes:
+  - name: shared-logs
+    emptyDir: {}
+```
+
+---
+
+### **Working with Jobs and CronJobs**
+
+**34. Task:**  
+Create a Kubernetes Job to run a one-time batch process using the `busybox` image.
+
+**Answer:**  
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: batch-job
+spec:
+  template:
+    spec:
+      containers:
+      - name: batch-container
+        image: busybox
+        command: ["sh", "-c", "echo Hello, Kubernetes! && sleep 30"]
+      restartPolicy: Never
+```
+
+---
+
+**35. Task:**  
+Create a CronJob that runs the above batch process every day at midnight.
+
+**Answer:**  
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-job
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: batch-container
+            image: busybox
+            command: ["sh", "-c", "echo Hello, Kubernetes! && sleep 30"]
+          restartPolicy: Never
+```
+
+---
+
+### **Application Scaling**
+
+**36. Task:**  
+Create a Kubernetes Deployment and scale it dynamically based on memory usage.
+
+**Answer:**  
+Create the Deployment:  
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-intensive-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: memory-intensive-app
+  template:
+    metadata:
+      labels:
+        app: memory-intensive-app
+    spec:
+      containers:
+      - name: app-container
+        image: busybox
+        command: ["sh", "-c", "while true; do echo Hello Kubernetes; sleep 10; done"]
+        resources:
+          limits:
+            memory: "256Mi"
+          requests:
+            memory: "128Mi"
+```
+
+Create the HPA:  
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: memory-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: memory-intensive-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+```
+
+---
+
+**37. Task:**  
+Manually scale a StatefulSet to handle increased workloads during peak hours.
+
+**Answer:**  
+```bash
+kubectl scale statefulset redis-statefulset --replicas=5
+```
+
+---
+
+### **Advanced Resource Management**
+
+**38. Task:**  
+Reserve a specific node for critical workloads by tainting it and scheduling Pods with tolerations.
+
+**Answer:**  
+Taint the node:  
+```bash
+kubectl taint nodes critical-node key=value:NoSchedule
+```
+
+Schedule a Pod with tolerations:  
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: critical-pod
+spec:
+  tolerations:
+  - key: "key"
+    operator: "Equal"
+    value: "value"
+    effect: "NoSchedule"
+  containers:
+  - name: nginx
+    image: nginx
+```
+
+---
+
+**39. Task:**  
+Create a ResourceQuota to limit the number of Pods and CPU usage in a namespace.
+
+**Answer:**  
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: namespace-quota
+  namespace: my-namespace
+spec:
+  hard:
+    pods: "10"
+    limits.cpu: "4"
+```
+
+---
+
+### **CKAD Real-Time Issues**
+
+**40. Task:**  
+Identify and fix a misconfigured Pod that cannot communicate with the Service.
+
+**Solution:**  
+- Verify the Service `selector` matches the Pod `labels`.
+- Check the Service and Pod are in the same namespace.
+- Use `kubectl describe service <service-name>` and `kubectl logs` for debugging.
+
+---
